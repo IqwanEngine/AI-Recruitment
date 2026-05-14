@@ -1,0 +1,6 @@
+{
+  "name": "IqwanEngine AI Interface",
+  "description": "A professional cyberpunk AI chat interface built for Muhammad Hairul Iqwan, featuring simulated AI logic, TTS, and real-time canvas visualizations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["AI Chat", "Speech Synthesis", "Real-time Visualization"]
+}

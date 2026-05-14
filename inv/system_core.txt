@@ -1,0 +1,22 @@
+//==IqwanEngine: Neural State Data
+// System: IqwanEngine v4.0.0 (Neural Core)
+// Authorization: IQWAN_ROOT_ONLY
+// ━━━━━━━━━━━━━━━━━━━━
+
+[SYSTEM_CORE_MANIFEST]
+Function: Manages the bidirectional flow between LLM inference and local SQLite persistence.
+Calibration: 0.9982ms
+Permissions: RESTRICTED (-r--------)
+
+[NEURAL_STATE_MAPPING]
+- State_0: ID_IDLE
+- State_1: ID_INFERENCE_ORCHESTRATING
+- State_2: ID_DB_PERSISTENCE_LOCKED (Data Integrity Mode)
+- State_3: ID_WEBHOOK_EMISSION_ACTIVE
+
+[SECURITY_PROTOCOL]
+This file serves as a checksum for neural logic. Any unauthorized mutation to the 
+underlying architecture triggers a 'WaitMsBeforeAsync' timeout shift to prevent 
+brute-force state manipulation.
+
+//==IqwanEngine: Logic Architect

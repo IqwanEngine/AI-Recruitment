@@ -1,0 +1,206 @@
+/* IqwanEngine */
+@import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Roboto+Mono:wght@300;400;500&family=Space+Grotesk:wght@300;400;700&display=swap");
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────────
+   FIX 1: Removed @tailwind base/components/utilities
+   — These are Tailwind v3 directives and conflict
+     with the Tailwind v4 @import above.
+     @import "tailwindcss" already handles everything.
+───────────────────────────────────────────── */
+
+@theme {
+    --color-cyber-blue: var(--accent-color, #00f1fe);
+    --color-cyber-blue-dark: var(--accent-color-dark, #006a70);
+    --color-cyber-bg: #0a0a0c;
+    --font-orbitron: "Orbitron", sans-serif;
+    --font-mono: "Roboto Mono", monospace;
+}
+
+@layer base {
+    /* IqwanEngine Root */
+    :root {
+        --accent-color: #00f1fe;
+        --accent-color-dark: #006a70;
+        /* ─────────────────────────────────────────────
+           FIX 3: Added --accent-rgb for all themes.
+           Was used in body background-image but never
+           declared — caused broken glow on all themes.
+        ───────────────────────────────────────────── */
+        --accent-rgb: 0, 241, 254;
+    }
+
+    :root.theme-crimson {
+        --accent-color: #ff003c;
+        --accent-color-dark: #80001e;
+        --accent-rgb: 255, 0, 60; /* FIX 3 continued */
+    }
+
+    :root.theme-acid {
+        --accent-color: #bfff00;
+        --accent-color-dark: #5a7a00;
+        --accent-rgb: 191, 255, 0; /* FIX 3 continued */
+    }
+
+    /* Scaling Logic Baru (Satu tempat sahaja!) */
+    html {
+        font-size: 15px; /* Mobile biarkan selesa */
+    }
+
+    @media (min-width: 1024px) {
+        html {
+            /* 10px adalah 'Golden Ratio' untuk UI yang nampak teknikal & pro */
+            font-size: 10px;
+        }
+    }
+
+    body {
+        @apply bg-cyber-bg text-white font-mono overflow-hidden h-screen;
+        background-image:
+            radial-gradient(
+                circle at 50% 50%,
+                rgba(var(--accent-rgb), 0.05) 0%,
+                transparent 100%
+            ),
+            linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+        background-size:
+            100% 100%,
+            100% 2px;
+    }
+}
+
+@layer components {
+    .heart-glow {
+        @apply relative flex items-center justify-center;
+        filter: drop-shadow(0 0 8px rgba(34, 197, 94, 0.5));
+    }
+
+    .glass-panel {
+        @apply backdrop-blur-2xl bg-black/40 border border-white/5 shadow-2xl;
+    }
+
+    .cyber-button {
+        @apply relative overflow-hidden transition-all duration-300 uppercase tracking-[0.2em] border border-cyber-blue/30 bg-white/5 hover:bg-cyber-blue/10 hover:border-cyber-blue hover:shadow-[0_0_20px_rgba(0,241,254,0.3)] active:scale-95;
+        font-family: var(--font-orbitron);
+    }
+
+    .scanline {
+        width: 100%;
+        height: 100px;
+        z-index: 9999;
+        position: absolute;
+        pointer-events: none;
+        background: linear-gradient(
+            to bottom,
+            rgba(255, 255, 255, 0),
+            rgba(255, 255, 255, 0.5) 50%,
+            rgba(0, 0, 0, 0.2) 51%,
+            rgba(0, 0, 0, 0)
+        );
+        opacity: 0.1;
+        animation: scanline 10s linear infinite;
+    }
+
+    /* ─────────────────────────────────────────────
+       FIX 2: Kept only ONE @keyframes scanline here.
+       The duplicate block outside (using `bottom`)
+       was conflicting and causing a broken animation.
+    ───────────────────────────────────────────── */
+    @keyframes scanline {
+        0% {
+            transform: translateY(-100%);
+        }
+        100% {
+            transform: translateY(100vh);
+        }
+    }
+}
+
+@keyframes typing {
+    0%,
+    100% {
+        opacity: 0.3;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.2);
+    }
+}
+
+.typing-dot {
+    animation: typing 1s infinite ease-in-out;
+}
+
+.typing-dot:nth-child(2) {
+    animation-delay: 0.2s;
+}
+.typing-dot:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+::-webkit-scrollbar {
+    width: 3px;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(0, 241, 254, 0.3);
+    border-radius: 10px;
+}
+
+/* Animation untuk Laser Scan pada Button Sidebar */
+@keyframes scan-line {
+    0% {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(400%);
+        opacity: 0;
+    }
+}
+
+.animate-scan {
+    animation: scan-line 2s linear infinite;
+}
+
+.font-orbitron {
+    font-family: "Orbitron", sans-serif;
+}
+
+/* Custom Glow Effect */
+.cyber-button-glow {
+    box-shadow: 0 0 15px rgba(0, 241, 254, 0.3);
+}
+
+.cyber-button-glow:hover {
+    box-shadow: 0 0 25px rgba(0, 241, 254, 0.5);
+}
+
+@keyframes loading-glow {
+    0%,
+    100% {
+        opacity: 0.1;
+        transform: scale(0.8);
+        filter: blur(1px);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.2);
+        filter: blur(0px) drop-shadow(0 0 5px var(--accent-color));
+    }
+}
+
+.animate-loading-wave {
+    animation: loading-glow 1.2s infinite ease-in-out;
+}
+
+/* Delay staggered untuk kesan ombak */
+.delay-200 {
+    animation-delay: 0.2s;
+}
+.delay-400 {
+    animation-delay: 0.4s;
+}

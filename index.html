@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>IqwanEngine | Recruitment AI | Open To Work |</title>
+
+        <link rel="icon" type="image/png" href="./favicon-IE.png" />
+
+        <script>
+            //== IqwanEngine : Title Scroller Logic ==
+            (function () {
+                let titleText =
+                    "IqwanEngine ✨ Recruitment AI ✨ Open To Work ";
+
+                function scrollTitle() {
+                    titleText =
+                        titleText.substring(1) + titleText.substring(0, 1);
+                    document.title = titleText;
+                    setTimeout(scrollTitle, 300);
+                }
+
+                window.onload = scrollTitle;
+            })();
+        </script>
+    </head>
+    <body>
+        <div id="root"></div>
+        <script type="module" src="/src/main.tsx"></script>
+    </body>
+</html>

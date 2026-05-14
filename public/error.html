@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IqwanEngine | Recalibrating</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400&display=swap');
+
+        :root {
+            --bg-color: #050505;
+            --accent-color: #00f1fe;
+            --text-secondary: rgba(255, 255, 255, 0.4);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: white;
+            font-family: 'JetBrains Mono', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            letter-spacing: -0.02em;
+        }
+
+        .container {
+            text-align: center;
+            position: relative;
+        }
+
+        .glitch-wrapper {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        .status-code {
+            font-size: 8rem;
+            font-weight: 300;
+            margin: 0;
+            background: linear-gradient(180deg, #fff 0%, rgba(255,255,255,0.1) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            opacity: 0.8;
+        }
+
+        .message {
+            font-size: 1.1rem;
+            color: white;
+            max-width: 400px;
+            margin: 0 auto;
+            line-height: 1.6;
+            font-weight: 300;
+        }
+
+        .sub-message {
+            margin-top: 1.5rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            letter-spacing: 0.2rem;
+        }
+
+        .neural-line {
+            width: 100px;
+            height: 1px;
+            background: var(--accent-color);
+            margin: 2rem auto;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .neural-line::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, #fff, transparent);
+            animation: flow 2s infinite linear;
+        }
+
+        @keyframes flow {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .grid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 241, 254, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 241, 254, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .circle-gradient {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(0, 241, 254, 0.05) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: -1;
+        }
+    </style>
+</head>
+<body>
+    <div class="grid-bg"></div>
+    <div class="circle-gradient"></div>
+
+    <div class="container">
+        <div class="glitch-wrapper">
+            <h1 class="status-code">404</h1>
+        </div>
+        
+        <div class="neural-line"></div>
+
+        <p class="message">
+            IqwanEngine is recalibrating its neural network. 
+            Please try again later.
+        </p>
+
+        <p class="sub-message">
+            System Code: 0xNEURAL_OVERLOAD
+        </p>
+    </div>
+</body>
+</html>
