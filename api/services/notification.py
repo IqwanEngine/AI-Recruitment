@@ -1,10 +1,16 @@
-# ==IqwanEngine: Telegram Notification Service
+import logging
 import os
 
 import requests
 from dotenv import load_dotenv
 
 load_dotenv()
+
+logger = logging.getLogger("IqwanEngine.TelegramService")
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
 
 
 class TelegramService:
@@ -21,7 +27,11 @@ class TelegramService:
     def send_notification(self, message, buttons=None):
         """Helper to send telegram messages with optional buttons."""
         if not self.token or not self.admin_id:
-            print("#==IqwanEngine: Skipping Telegram - Credentials missing.")
+            logger.warning("IqwanEngine: Skipping Telegram - Credentials missing.")
+            return False
+
+        if not self.base_url:
+            logger.error("IqwanEngine: Telegram base URL not configured.")
             return False
 
         payload = {"chat_id": self.admin_id, "text": message, "parse_mode": "HTML"}
@@ -31,9 +41,13 @@ class TelegramService:
 
         try:
             response = requests.post(self.base_url, json=payload)
+            response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
             return response.ok
+        except requests.exceptions.RequestException as e:
+            logger.error("IqwanEngine: Telegram Webhook Error: %s", e)
+            return False
         except Exception as e:
-            print(f"#==IqwanEngine: Telegram Webhook Error: {e}")
+            logger.error("IqwanEngine: Unexpected error in TelegramService: %s", e)
             return False
 
     def notify_visit(self, company_name):

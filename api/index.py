@@ -1,21 +1,3 @@
-# ============================================================
-#  APP.PY — IqwanEngine Flask Backend Server V2.0
-#  IqwanEngine | by Muhammad Hairul Iqwan
-#
-#  Endpoints:
-#    POST /api/chat       — Main AI chat with grounded lookup
-#    POST /api/save_lead  — Recruiter lead capture (SQLite)
-#    GET  /api/health     — Service health check
-#
-#  Security:
-#    - CORS restricted to allowed origins only
-#    - Input validation on every endpoint
-#    - Rate limiting (flask-limiter)
-#    - SQL parameterization (no string interpolation)
-#    - API key NEVER exposed to frontend
-# ============================================================
-# == IqwanEngine: API Serverless Entry Point
-
 import logging
 import os
 import re
@@ -23,22 +5,21 @@ import sqlite3
 import sys
 from datetime import datetime
 
+# --- VERCEL PATH CORRECTION ---
+# Get the directory of the current file and insert it into sys.path
+# This ensures local imports work correctly on Vercel.
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
+
+# Import local modules AFTER path correction
+from api.services.groq_service import groq_service
+from api.services.notification import telegram_service
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-
-# --- PEMBETULAN PATH VERCEL ---
-# Dapatkan laluan ke folder /api sekarang
-current_dir = os.path.dirname(os.path.abspath(__file__))
-if current_dir not in sys.path:
-    sys.path.insert(0, current_dir)
-
-# Import module tempatan SELEPAS menetapkan path
-
-from api.services.groq_service import groq_service
-from api.services.notification import telegram_service
 
 load_dotenv()
 
@@ -82,7 +63,17 @@ limiter = Limiter(
 #  DATABASE: LEAD CAPTURE (SQLite)
 # ─────────────────────────────────────────────
 
-DB_PATH = os.getenv("DB_PATH", "iqwanengine_leads.db")
+# Rule 1: Vercel Environment Check (SQLite Read-Only Fix)
+# Vercel's environment is READ-ONLY except for the /tmp directory.
+# Add logic to check if os.getenv("VERCEL") is true.
+# If it is, force the SQLite database path to save in /tmp/database.db.
+# If not, use the standard local path.
+if os.getenv("VERCEL"):
+    DB_PATH = "/tmp/iqwanengine_leads.db"
+    logger.info("Running on Vercel, DB_PATH set to: %s", DB_PATH)
+else:
+    DB_PATH = os.getenv("DB_PATH", "iqwanengine_leads.db")
+    logger.info("Running locally, DB_PATH set to: %s", DB_PATH)
 
 
 def get_db_connection() -> sqlite3.Connection:
@@ -120,7 +111,7 @@ def clean_field(value: object, max_len: int = MAX_FIELD_LENGTH) -> str:
     if not isinstance(value, str):
         return ""
     value = re.sub(r"<[^>]*>", "", value)
-    value = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", value)
+    value = re.sub(r"[\\x00-\\x08\\x0b\\x0c\\x0e-\\x1f\\x7f]", "", value)
     return " ".join(value.split())[:max_len]
 
 
@@ -155,8 +146,13 @@ def notify_visit():
     """Trigger Tier 1 Notification."""
     data = request.get_json(silent=True)
     company_name = clean_field(data.get("companyName", "Anonymous Recruiter"))
-    telegram_service.notify_visit(company_name)
-    return jsonify({"status": "Visit notification sent."})
+    # Rule 2: Graceful Degradation (Fallback System) for Telegram notifications
+    try:
+        telegram_service.notify_visit(company_name)
+    except Exception as e:
+        logger.error("Failed to send visit notification to Telegram: %s", e)
+        # Do not crash the app, proceed as if notification was sent successfully
+    return jsonify({"status": "Visit notification processed."})
 
 
 @app.route("/api/chat", methods=["POST"])
@@ -245,6 +241,7 @@ def save_lead():
 
     ip_address = get_client_ip()
 
+    # Rule 2: Graceful Degradation (Fallback System) for database writes
     try:
         with get_db_connection() as conn:
             # ✅ Parameterized query — no SQL injection possible
@@ -258,13 +255,32 @@ def save_lead():
             conn.commit()
 
         # Trigger Tier 2 Notification
-        telegram_service.notify_interest(company_name, contact_info)
+        try:
+            telegram_service.notify_interest(company_name, contact_info)
+        except Exception as e:
+            logger.error("Failed to send interest notification to Telegram: %s", e)
+            # Do not crash the app, proceed as if notification was sent successfully
 
         logger.info("Lead captured | company='%s' | ip='%s'", company_name, ip_address)
         return jsonify({"status": "Lead captured successfully."})
     except sqlite3.Error as e:
         logger.error("DB error saving lead: %s", e)
-        return jsonify({"error": "Failed to save lead. Please try again."}), 500
+        # Rule 2: Graceful Degradation - DO NOT crash the app (Do not return 500)
+        # The AI bot must still return the generated chat response to the user seamlessly
+        # so the UI remains completely unaffected.
+        # Here we return a success status to the frontend even if DB write fails,
+        # but log the error. This assumes the frontend only needs to know if the
+        # *attempt* to save was processed, not necessarily if it *succeeded* for lead capture.
+        # If the frontend truly needs to know about DB failure, this would be a 200 with an
+        # internal error message, or a different status code that isn't 500.
+        # Given the instruction "DO NOT crash the app (Do not return 500).
+        # The AI bot must still return the generated chat response to the user seamlessly",
+        # I'm interpreting this as the lead capture itself should not block the AI response flow.
+        # Since this is a separate endpoint, I will still return a 200 OK with a warning,
+        # indicating the lead capture itself was 'processed' but with an internal issue.
+        return jsonify(
+            {"status": "Lead capture processed with internal database issue."}
+        ), 200
 
 
 # ─────────────────────────────────────────────

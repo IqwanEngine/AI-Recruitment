@@ -16,11 +16,21 @@ import json
 import logging
 import os
 import re
+import sys  # Added for sys.path modification
 
 from dotenv import load_dotenv
-from groq import Groq, APIConnectionError, APIStatusError, RateLimitError
+from groq import APIConnectionError, APIStatusError, Groq, RateLimitError
 
-from db_data import IQWAN_PROFILE, find_ground_truth, get_questions_by_category
+# --- VERCEL PATH CORRECTION for services ---
+# Get the directory of the current file (api/services) and its parent (api)
+# Insert the parent directory (api) into sys.path to resolve imports like 'db_data'
+current_dir = os.path.dirname(os.path.abspath(__file__))
+api_dir = os.path.dirname(current_dir)
+if api_dir not in sys.path:
+    sys.path.insert(0, api_dir)
+
+# Import local modules AFTER path correction
+from services.db_data import IQWAN_PROFILE, find_ground_truth, get_questions_by_category
 
 load_dotenv()
 
@@ -38,11 +48,11 @@ logging.basicConfig(
 #  CONSTANTS
 # ─────────────────────────────────────────────
 
-MAX_HISTORY_TURNS = 6       # Last N messages passed to Groq (cost/context control)
-MAX_INPUT_LENGTH  = 500     # Hard cap on user input before AI call
-MODEL_NAME        = "llama-3.3-70b-versatile"
-TEMPERATURE       = 0.5
-MAX_TOKENS        = 800
+MAX_HISTORY_TURNS = 6  # Last N messages passed to Groq (cost/context control)
+MAX_INPUT_LENGTH = 500  # Hard cap on user input before AI call
+MODEL_NAME = "llama-3.3-70b-versatile"
+TEMPERATURE = 0.5
+MAX_TOKENS = 800
 
 # ─────────────────────────────────────────────
 #  SYSTEM PROMPT (Base Persona — mirrors groqService.ts)
@@ -81,6 +91,7 @@ Always respond with a valid JSON object:
 #  INPUT SANITIZER
 # ─────────────────────────────────────────────
 
+
 def sanitize_input(text: str) -> str:
     """
     Security: Strip HTML tags, control characters, and enforce length cap.
@@ -91,7 +102,7 @@ def sanitize_input(text: str) -> str:
     # Strip HTML/script tags
     text = re.sub(r"<[^>]*>", "", text)
     # Strip null bytes and control chars (except standard whitespace)
-    text = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", text)
+    text = re.sub(r"[\\x00-\\x08\\x0b\\x0c\\x0e-\\x1f\\x7f]", "", text)
     # Collapse excessive whitespace
     text = " ".join(text.split())
     # Hard length cap
@@ -117,10 +128,12 @@ def sanitize_history(
             continue  # Drop system/tool injections from user-supplied history
         if not isinstance(content, str):
             continue
-        safe.append({
-            "role": role,
-            "content": sanitize_input(content),
-        })
+        safe.append(
+            {
+                "role": role,
+                "content": sanitize_input(content),
+            }
+        )
     # Return only the last N turns to control context window
     return safe[-MAX_HISTORY_TURNS:]
 
@@ -128,6 +141,7 @@ def sanitize_history(
 # ─────────────────────────────────────────────
 #  GROQ SERVICE
 # ─────────────────────────────────────────────
+
 
 class GroqService:
     """
@@ -221,10 +235,13 @@ VERIFIED ANSWER:
         # ── Step 1: Sanitize ─────────────────
         clean_message = sanitize_input(message)
         if not clean_message:
-            return {"answer": "I did not receive a valid message. Please try again.", "new_suggestions": []}
+            return {
+                "answer": "I did not receive a valid message. Please try again.",
+                "new_suggestions": [],
+            }
 
-        safe_history  = sanitize_history(history or [])
-        safe_company  = sanitize_input(company_name)
+        safe_history = sanitize_history(history or [])
+        safe_company = sanitize_input(company_name)
 
         # ── Step 2: Lookup (db_data first) ───
         ground_truth = find_ground_truth(clean_message)
@@ -232,7 +249,10 @@ VERIFIED ANSWER:
         if ground_truth:
             logger.info("Ground truth FOUND for query: '%s...'", clean_message[:60])
         else:
-            logger.info("No ground truth match. Falling back to AI persona for: '%s...'", clean_message[:60])
+            logger.info(
+                "No ground truth match. Falling back to AI persona for: '%s...'",
+                clean_message[:60],
+            )
 
         # ── Step 3: Build grounded system prompt ──
         system_prompt = self._build_system_prompt(ground_truth, safe_company)
@@ -259,7 +279,8 @@ VERIFIED ANSWER:
             # ── Step 6: Filter already-asked suggestions ──
             asked = set(asked_questions or [])
             result["new_suggestions"] = [
-                s for s in result.get("new_suggestions", [])
+                s
+                for s in result.get("new_suggestions", [])
                 if isinstance(s, str) and s not in asked
             ][:3]  # Max 3 suggestions
 
@@ -267,16 +288,28 @@ VERIFIED ANSWER:
 
         except RateLimitError:
             logger.warning("Groq rate limit hit.")
-            return {"answer": "IqwanEngine is processing too many requests. Please wait a moment.", "new_suggestions": []}
+            return {
+                "answer": "IqwanEngine is processing too many requests. Please wait a moment.",
+                "new_suggestions": [],
+            }
         except APIConnectionError as e:
             logger.error("Groq connection error: %s", e)
-            return {"answer": "Neural link unstable. Connection to AI failed.", "new_suggestions": []}
+            return {
+                "answer": "Neural link unstable. Connection to AI failed.",
+                "new_suggestions": [],
+            }
         except APIStatusError as e:
             logger.error("Groq API error [%s]: %s", e.status_code, e.message)
-            return {"answer": "IqwanEngine encountered an API error. Please try again.", "new_suggestions": []}
+            return {
+                "answer": "IqwanEngine encountered an API error. Please try again.",
+                "new_suggestions": [],
+            }
         except Exception as e:
             logger.exception("Unexpected error in GroqService.chat: %s", e)
-            return {"answer": "An unexpected error occurred. Please try again.", "new_suggestions": []}
+            return {
+                "answer": "An unexpected error occurred. Please try again.",
+                "new_suggestions": [],
+            }
 
 
 # ─────────────────────────────────────────────
