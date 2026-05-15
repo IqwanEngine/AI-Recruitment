@@ -14,11 +14,13 @@
 #    - SQL parameterization (no string interpolation)
 #    - API key NEVER exposed to frontend
 # ============================================================
+# == IqwanEngine: API Serverless Entry Point
 
 import logging
 import os
 import re
 import sqlite3
+import sys
 from datetime import datetime
 
 from dotenv import load_dotenv
@@ -26,8 +28,17 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from groq_service import groq_service
-from services.notification import telegram_service
+
+# --- PEMBETULAN PATH VERCEL ---
+# Dapatkan laluan ke folder /api sekarang
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
+
+# Import module tempatan SELEPAS menetapkan path
+
+from api.services.groq_service import groq_service
+from api.services.notification import telegram_service
 
 load_dotenv()
 

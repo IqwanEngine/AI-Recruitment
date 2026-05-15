@@ -28,3 +28,6 @@ yarn-error.log*
 *.pdf
 !public/media/*.pdf
 !public/media/*.mp4
+
+.vercel
+.env*.local
