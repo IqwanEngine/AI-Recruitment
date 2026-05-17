@@ -25,8 +25,7 @@
  * NOTE: VITE_ env vars ARE visible in the browser bundle — this is
  * intentional for the API URL (public), but NEVER use VITE_ for secrets.
  */
-const API_BASE_URL: string =
-  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
+const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? "";
 
 // ─────────────────────────────────────────────
 //  TYPES
@@ -57,7 +56,7 @@ const MAX_INPUT_LENGTH = 500;
 
 function sanitizeInput(text: string): string {
   return text
-    .replace(/<[^>]*>/g, "")            // Strip HTML tags
+    .replace(/<[^>]*>/g, "") // Strip HTML tags
     .replace(/[\x00-\x08\x0e-\x1f]/g, "") // Strip control chars
     .trim()
     .slice(0, MAX_INPUT_LENGTH);
@@ -158,25 +157,39 @@ export class GroqService {
         console.error(`[IqwanEngine] API ${res.status}: ${errMsg}`);
 
         if (res.status === 429) {
-          return { answer: "Too many requests. Please wait a moment before asking again.", new_suggestions: [] };
+          return {
+            answer:
+              "Too many requests. Please wait a moment before asking again.",
+            new_suggestions: [],
+          };
         }
-        return { answer: `IqwanEngine backend error (${res.status}). Please try again.`, new_suggestions: [] };
+        return {
+          answer: `IqwanEngine backend error (${res.status}). Please try again.`,
+          new_suggestions: [],
+        };
       }
 
       const data: RawApiResponse = await res.json();
       return parseResponse(data);
-
     } catch (error: unknown) {
       // Network-level failure (CORS, server down, etc.)
       if (error instanceof TypeError && error.message.includes("fetch")) {
-        console.error("[IqwanEngine] Network error — is the Flask backend running?", error);
+        console.error(
+          "[IqwanEngine] Network error — is the Flask backend running?",
+          error,
+        );
         return {
-          answer: "IqwanEngine backend is unreachable. Please ensure the server is running.",
+          answer:
+            "IqwanEngine backend is unreachable. Please ensure the server is running.",
           new_suggestions: [],
         };
       }
       console.error("[IqwanEngine] Unexpected error:", error);
-      return { answer: "SYSTEM ERROR: Neural link unstable. Could not process request.", new_suggestions: [] };
+      return {
+        answer:
+          "SYSTEM ERROR: Neural link unstable. Could not process request.",
+        new_suggestions: [],
+      };
     }
   }
 }

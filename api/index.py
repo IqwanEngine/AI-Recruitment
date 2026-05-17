@@ -6,20 +6,20 @@ import sys
 from datetime import datetime
 
 # --- VERCEL PATH CORRECTION ---
-# Get the directory of the current file and insert it into sys.path
-# This ensures local imports work correctly on Vercel.
 current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path:
     sys.path.insert(0, current_dir)
 
-# Import local modules AFTER path correction
-from api.services.groq_service import groq_service
-from api.services.notification import telegram_service
+# # isort: split
+# (Pagar Sihir: Jangan bagi linter susun kod bawah ni melompat ke atas!)
+
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from services.groq_service import groq_service
+from services.notification import telegram_service
 
 load_dotenv()
 
