@@ -53,14 +53,16 @@ class TelegramService:
     def notify_visit(self, company_name):
         """Tier 1 Notification: Visitor Alert"""
         message = (
-            f"🚀 <b>IQWANENGINE: VISIT</b>\n"
-            f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"🏢 <b>Syarikat:</b> {company_name}\n"
-            f"<i>Iqwan, ada orang melawat Recruiter AI anda.</i>"
+            f"✨ <b>[ IQWANENGINE : VISIT ALERT ]</b> ✨\n"
+            f"━━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"🏢 <b>Company:</b>\n"
+            f"┗ <code>{company_name}</code>\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━━\n"
+            f"👀 <i>Iqwan, someone just visited your Recruiter AI. Go check it out!</i> 🚀"
         )
         buttons = [
             {
-                "text": "🔍 Lihat Info Syarikat",
+                "text": "🔍 Search Company Info",
                 "url": f"https://www.google.com/search?q={company_name}",
             }
         ]
@@ -69,18 +71,22 @@ class TelegramService:
     def notify_interest(self, company_name, details):
         """Tier 2 Notification: High-Value Lead Alert"""
         message = (
-            f"🔥 <b>IQWANENGINE: INTEREST</b>\n"
-            f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"🏢 <b>Syarikat:</b> {company_name}\n"
-            f"<i>Iqwan, ada orang berminat dengan anda, mungkin boleh tackle dia.</i>"
+            f"🔥 <b>[ IQWANENGINE : HOT INTEREST ]</b> 🔥\n"
+            f"━━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"🏢 <b>Company:</b>\n"
+            f"┗ <code>{company_name}</code>\n\n"
+            f"📋 <b>Additional Details:</b>\n"
+            f"┗ <code>{details}</code>\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━━\n"
+            f"🎯 <i>Iqwan, a prospect is interested in you! Great opportunity to pitch them.</i> ⚡"
         )
         buttons = [
             {
-                "text": "📱 Details Recruiter",
+                "text": "📄 Send Resume",
                 "url": "https://your-admin-dashboard.com",
-            },  # Replace with actual link if needed
+            },
             {
-                "text": "🔍 Lihat Info Syarikat",
+                "text": "🔍 Search Company Info",
                 "url": f"https://www.google.com/search?q={company_name}",
             },
         ]

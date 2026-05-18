@@ -254,6 +254,24 @@ def save_lead():
             logger.error("Failed to send interest notification to Telegram: %s", e)
             # Do not crash the app, proceed as if notification was sent successfully
 
+        # 🚀 Trigger Google Apps Script Webhook for automated email delivery
+        gas_webhook_url = os.getenv("GAS_WEBHOOK_URL")
+        if gas_webhook_url:
+            try:
+                payload = {
+                    "company_name": company_name,
+                    "email_recruiter": contact_info,
+                    "additional_info": additional_info,
+                    "timestamp": datetime.utcnow().isoformat() + "Z",
+                }
+                # Menembak webhook ke Google Apps Script secara langsung
+                requests.post(gas_webhook_url, json=payload, timeout=5)  # type: ignore
+                logger.info("GAS Webhook fired successfully for email delivery.")
+            except Exception as e:
+                logger.error("Failed to trigger GAS Webhook for email: %s", e)
+        else:
+            logger.warning("GAS_WEBHOOK_URL is missing in environment setup.")
+
         logger.info("Lead captured | company='%s' | ip='%s'", company_name, ip_address)
         return jsonify({"status": "Lead captured successfully."})
     except sqlite3.Error as e:
