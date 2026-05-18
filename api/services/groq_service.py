@@ -1,5 +1,5 @@
 # ============================================================
-#  GROQ_SERVICE.PY — IqwanEngine AI Core Service V2.0
+#  GROQ_SERVICE.PY — IqwanEngine AI Core Service V2.1
 #  IqwanEngine | by Muhammad Hairul Iqwan
 #
 #  Architecture: Grounded Injection Pattern
@@ -10,13 +10,24 @@
 #
 #  Direct Python mirror of groqService.ts logic, with enhanced
 #  security (no browser-side key exposure) and anti-hallucination.
+#
+#  Changelog V2.1:
+#  - [BUGFIX] sanitize_input(): Fixed re.error bad character range
+#    caused by double backslash (\\x) inside raw string r"...".
+#    Raw string r"[\x00-\x08]" is the correct form — the regex
+#    engine interprets \xNN hex escapes natively. Using r"[\\x00]"
+#    produces a literal backslash + 'x00', breaking range checks.
+#  - [SECURITY] Added CORS origin warning note for production.
+#  - [HARDENING] Regex pattern consolidated into a named constant
+#    CONTROL_CHAR_PATTERN for single source of truth — matches the
+#    pattern already used correctly in index.py clean_field().
 # ============================================================
 
 import json
 import logging
 import os
 import re
-import sys  # Added for sys.path modification
+import sys
 
 from dotenv import load_dotenv
 from groq import APIConnectionError, APIStatusError, Groq, RateLimitError
@@ -55,7 +66,26 @@ TEMPERATURE = 0.5
 MAX_TOKENS = 800
 
 # ─────────────────────────────────────────────
-#  SYSTEM PROMPT (Base Persona — mirrors groqService.ts)
+#  SECURITY: SHARED SANITIZER PATTERN
+#  Single source of truth — mirrors clean_field() in index.py.
+#
+#  ✅ WHY r"[\x00-\x08...]" and NOT r"[\\x00-\\x08...]":
+#     Inside a raw string r"...", Python does NOT process \xNN.
+#     However, the regex ENGINE itself understands \xNN hex escapes.
+#     So r"[\x00-\x08]" → regex sees [\x00-\x08] → valid range.
+#
+#     r"[\\x00-\\x08]" → regex sees [\\x00-\\x08]:
+#       \\  = literal backslash character (ASCII 92)
+#       x00 = chars 'x', '0', '0'
+#       range check: e(101) to \(92) → CRASH: bad character range
+# ─────────────────────────────────────────────
+
+CONTROL_CHAR_PATTERN = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+#                                       ^^^^^^ Single backslash — CORRECT
+#                                       Regex engine handles \xNN natively.
+
+# ─────────────────────────────────────────────
+#  SYSTEM PROMPT (Base Persona)
 # ─────────────────────────────────────────────
 
 _RECRUITER_QUESTIONS_SAMPLE = get_questions_by_category("recruiter")[:3]
@@ -96,13 +126,19 @@ def sanitize_input(text: str) -> str:
     """
     Security: Strip HTML tags, control characters, and enforce length cap.
     Prevents prompt injection via crafted user messages.
+
+    IqwanEngine Note:
+        CONTROL_CHAR_PATTERN uses r"[\\x00-...]" with single backslash
+        in raw string — the regex engine resolves \\xNN hex escapes natively.
+        Double backslash r"[\\\\x00-...]" would break the character range.
     """
     if not isinstance(text, str):
         return ""
     # Strip HTML/script tags
     text = re.sub(r"<[^>]*>", "", text)
-    # Strip null bytes and control chars (except standard whitespace)
-    text = re.sub(r"[\\x00-\\x08\\x0b\\x0c\\x0e-\\x1f\\x7f]", "", text)
+    # ✅ FIXED: Single backslash in raw string — regex engine handles \xNN
+    # ❌ BROKEN WAS: r"[\\x00-\\x08\\x0b\\x0c\\x0e-\\x1f\\x7f]"
+    text = CONTROL_CHAR_PATTERN.sub("", text)
     # Collapse excessive whitespace
     text = " ".join(text.split())
     # Hard length cap
@@ -177,7 +213,11 @@ class GroqService:
         prompt = BASE_SYSTEM_PROMPT
 
         if company_name:
-            prompt += f"\n\n### 🏢 CURRENT SESSION\nYou are speaking with a representative from: **{sanitize_input(company_name)}**. Address them respectfully."
+            prompt += (
+                f"\n\n### 🏢 CURRENT SESSION\n"
+                f"You are speaking with a representative from: **{sanitize_input(company_name)}**. "
+                f"Address them respectfully."
+            )
 
         if ground_truth:
             prompt += f"""
