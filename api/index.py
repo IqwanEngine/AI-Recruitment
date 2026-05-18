@@ -36,17 +36,23 @@ logging.basicConfig(
 )
 
 # ─────────────────────────────────────────────
-#  SECURITY: CORS — RESTRICT ORIGINS
+#  SECURITY: CORS — DYNAMIC ORIGINS FOR VERCEL
 # ─────────────────────────────────────────────
-# ⚠️  CHANGE THIS to your actual frontend domain before deploying.
-# Never use "*" in production — it allows any site to call your API.
 
-ALLOWED_ORIGINS = os.getenv(
-    "ALLOWED_ORIGINS",
-    "http://localhost:5173,http://localhost:3000",  # Vite dev default + self
-).split(",")
-
-CORS(app, resources={r"/api/*": {"origins": ALLOWED_ORIGINS}})
+CORS(
+    app,
+    resources={
+        r"/api/*": {
+            "origins": [
+                "http://localhost:5173",
+                "http://localhost:3000",
+                r"https://.*\.vercel\.app",
+            ],
+            "methods": ["GET", "POST", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization"],
+        }
+    },
+)
 
 # ─────────────────────────────────────────────
 #  SECURITY: RATE LIMITING
