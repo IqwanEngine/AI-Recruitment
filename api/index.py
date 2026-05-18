@@ -104,7 +104,7 @@ def clean_field(value: object, max_len: int = MAX_FIELD_LENGTH) -> str:
     if not isinstance(value, str):
         return ""
     value = re.sub(r"<[^>]*>", "", value)
-    value = re.sub(r"[\\x00-\\x08\\x0b\\x0c\\x0e-\\x1f\\x7f]", "", value)
+    value = re.sub("[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", value)
     return " ".join(value.split())[:max_len]
 
 
