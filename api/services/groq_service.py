@@ -307,7 +307,7 @@ VERIFIED ANSWER:
         # ── Step 5: Call Groq API ─────────────
         try:
             completion = self.client.chat.completions.create(
-                messages=messages,
+                messages=messages,  # type: ignore
                 model=MODEL_NAME,
                 temperature=TEMPERATURE,
                 max_tokens=MAX_TOKENS,

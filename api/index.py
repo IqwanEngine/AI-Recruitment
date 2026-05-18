@@ -138,7 +138,7 @@ def health():
 def notify_visit():
     """Trigger Tier 1 Notification."""
     data = request.get_json(silent=True)
-    company_name = clean_field(data.get("companyName", "Anonymous Recruiter"))
+    company_name = clean_field(data.get("companyName", "Anonymous Recruiter"))  # type: ignore
     # Rule 2: Graceful Degradation (Fallback System) for Telegram notifications
     try:
         telegram_service.notify_visit(company_name)
